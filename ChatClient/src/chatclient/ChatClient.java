@@ -86,6 +86,7 @@ public class ChatClient extends JFrame implements ActionListener{
         usrText.addActionListener(this);
         add(usrText, BorderLayout.NORTH);
         chatWindow = new JTextArea();
+        chatWindow.setEditable(false);
         add(new JScrollPane(chatWindow), BorderLayout.CENTER);
         setSize(300, 150);
         setVisible(true);
@@ -95,39 +96,44 @@ public class ChatClient extends JFrame implements ActionListener{
     @Override
     public void actionPerformed(ActionEvent e) {
         String msg = e.getActionCommand();
-        switch(msg){
-            case "list_users":
-                sendMessage("LSTU>" + name);
-                break;
-            case "list_topics":
-                sendMessage("LSTT>" + name);
-                break;
-            case "quit":
-                this.dispose();
-                System.exit(1);
-            default:
-                if(msg.length() > 7 && msg.substring(0, 7).equals("create_")){
-                    sendMessage("CREA>" + name + ">" + msg.substring(7));
+        if(msg.length() <= 160){
+            switch(msg){
+                case "list_users":
+                    sendMessage("LSTU>" + name);
                     break;
-                } else if(msg.length() > 5 && msg.substring(0, 5).equals("join_")){
-                    sendMessage("JOIN>" + name + ">" + msg.substring(5));
-                }
-                else{
-                    sendMessage("MESS>" + name + "- " + e.getActionCommand());
-                }
-                break;
+                case "list_topics":
+                    sendMessage("LSTT>" + name);
+                    break;
+                case "quit":
+                    this.dispose();
+                    System.exit(1);
+                default:
+                    if(msg.length() > 7 && msg.substring(0, 7).equals("create_")){
+                        sendMessage("CREA>" + name + ">" + msg.substring(7));
+                        break;
+                    } else if(msg.length() > 5 && msg.substring(0, 5).equals("join_")){
+                        sendMessage("JOIN>" + name + ">" + msg.substring(5));
+                    }
+                    else{
+                        sendMessage("MESS>" + name + ">" + e.getActionCommand());
+                    }
+                    break;
+            }
+        }
+        else{
+            showMessage("\nSu mensaje excede los 160 caracteres y no pudo enviarse.\n");
         }
         usrText.setText("");
     }
 
     private void sendMessage(String message) {
-        try{
+        try {
             os.flush();
             os.writeObject(message);
-            showMessage("\n" + message);
-        }
-        catch(Exception e){
-            showMessage("\n error al enviar");
+        } catch (IOException ex) {
+            Logger.getLogger(ChatClient.class.getName()).log(Level.SEVERE, null, ex);
+            close();
+            System.exit(0);
         }
     }
 
@@ -143,6 +149,7 @@ public class ChatClient extends JFrame implements ActionListener{
         }
         finally{
             close();
+            System.exit(0);
         }
     }
 
@@ -156,6 +163,7 @@ public class ChatClient extends JFrame implements ActionListener{
         }
         catch(Exception e){
             e.printStackTrace();
+            System.exit(0);
         }
     }
 
@@ -171,14 +179,14 @@ public class ChatClient extends JFrame implements ActionListener{
         while(true){
             try{
                 msg = (String) is.readObject();
-//                showMessage("\nINCOMING: " + msg);
                 String[] splitMsg = msg.split(">+");
                 switch(splitMsg[0]){
                     case "NAME":
                         name = splitMsg[1];
                         break;
                     case "MESS":
-                        showMessage(splitMsg[1] + "> " + splitMsg[2]);
+                        System.out.println(msg);
+                        showMessage(splitMsg[1] + "> " + splitMsg[2] + "\n");
                         break;
                     case "LSTT":
                         showMessage(splitMsg[1]);
@@ -197,27 +205,23 @@ public class ChatClient extends JFrame implements ActionListener{
                 }
             }
             catch(ClassNotFoundException e){
+                showMessage("Hubo un error al recibir mensajes.\n");
                 e.printStackTrace();
             }
         }
     }
 
-    private void showMessage(final String m) {
-        SwingUtilities.invokeLater(
-                    new Runnable(){
-                        public void run(){
-                            chatWindow.append(m);
-                        }
-                    }
-                );
+    private void showMessage(String m) {
+        chatWindow.append(m);
     }
     
     private void connect(String ipAddress, int portNumber){
         try {
-            con = new Socket(InetAddress.getByName(ipAddress), portNumber);
+            con = new Socket(ipAddress, portNumber);
             showMessage("Conectado.");
         } catch (IOException ex) {
             Logger.getLogger(ChatClient.class.getName()).log(Level.SEVERE, null, ex);
+            System.exit(0);
         }
     }
 

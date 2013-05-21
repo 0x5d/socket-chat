@@ -30,8 +30,9 @@ public class ServerThread extends Thread{
         server.createTopic(currentTopic);
         this.con = con;
         initStreams();
+        server.subscribeToTopic(currentTopic, os);
         sendMessage("JOIN>Bienvenid@ a la antesala\nUsted puede:\nVer los usuarios conectados: list_users\nVer los temas activos: list_topics\n"
-                + "Crear un nuevo tema: create_'nombre del tema'\nUnirse a un tema: join_'nombre del tema'\nSalir: quit");
+                + "Crear un nuevo tema: create_'nombre del tema'\nUnirse a un tema: join_'nombre del tema'\nSalir: quit\n");
     }
 
     private void initStreams() {
@@ -44,6 +45,8 @@ public class ServerThread extends Thread{
         } catch (IOException ex) {
             System.out.println("Error al inicializar streams.");
             Logger.getLogger(ChatServer.class.getName()).log(Level.SEVERE, null, ex);
+            close();
+            System.exit(0);
         }
     }
     
@@ -100,7 +103,7 @@ public class ServerThread extends Thread{
                         break;
                     case "MESS":
                         ArrayList<ObjectOutputStream> subs = server.getTopicOutputStreams(currentTopic);
-                        sendMessageToMany("MESS>" + splitMsg[1], subs);
+                        sendMessageToMany("MESS>" + splitMsg[1] + ">" + splitMsg[2], subs);
                         break;
                     default:
                         break;
@@ -114,17 +117,20 @@ public class ServerThread extends Thread{
             } catch (InterruptedException ex1) {
                 Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex1);
             }
+            System.exit(0);
         }
     }
 
     private String listTopics() {
         Object[] topics = server.getTopics();
         String s = "Temas:\n";
+        String topic = "";
         for(int i = 0; i < topics.length; i++){
-            s += (String)topics[i] + "\n";
+            topic = (String)topics[i];
+            s += topic + " con " + server.getUsersOnTopic(topic) + " usuarios.\n";
         }
         if(s.equals("Temas:\n")){
-            s += "No se ha creado ningun tema. Para crear uno, escriba 'create_topic'";
+            s += "No se ha creado ningun tema. Para crear uno, escriba 'create_'nombre del tema'";
         }
         return s;
     }
@@ -145,6 +151,7 @@ public class ServerThread extends Thread{
                 o.writeObject(message);
             } catch (IOException ex) {
                 Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+                System.exit(0);
             }
         }
     }

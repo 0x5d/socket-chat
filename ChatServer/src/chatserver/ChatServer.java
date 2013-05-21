@@ -10,13 +10,13 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import java.util.ArrayList;
-import java.util.Set;
 
 /**
  *
@@ -40,7 +40,6 @@ public class ChatServer implements Runnable{
      */    
     public static void main(String[] args) {
         int serverPort;
-        //        String s = "Ingrese el puerto que desee utilizar:";
         try {
             System.out.println(InetAddress.getLocalHost());
         } catch (UnknownHostException ex) {
@@ -49,7 +48,6 @@ public class ChatServer implements Runnable{
         while(true){
             System.out.println("Ingrese el puerto que desee utilizar:");
             try{
-//                s = (String)JOptionPane.showInputDialog(null, s, "Input", JOptionPane.PLAIN_MESSAGE);
                 BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
                 String s = bufferRead.readLine();
                 serverPort = Integer.parseInt(s);
@@ -57,7 +55,6 @@ public class ChatServer implements Runnable{
             }
             catch(Exception e)
             {
-//                s = "Ingrese un puerto valido";
                     System.out.println("Por favor ingrese un puerto valido");
             }
         }
@@ -73,7 +70,7 @@ public class ChatServer implements Runnable{
         users = new ArrayList<String>();
 //        nextPort = port + 1;
         try{
-            server = new ServerSocket(port);
+            server = new ServerSocket(port, 100, null);
         }
         catch(IOException e){
             e.printStackTrace();
@@ -91,6 +88,10 @@ public class ChatServer implements Runnable{
             roomNames.add(roomName);
         }
         return roomNames.toArray();
+    }
+    
+    public int getUsersOnTopic(String topicName){
+        return topicsAndSubs.get(topicName).size();
     }
    
     public String checkForName(String checkName){
@@ -125,11 +126,11 @@ public class ChatServer implements Runnable{
     }
     
     public String subscribeToTopic(String topicName, ObjectOutputStream clientOutputStream){
-        String s = "Bienvenido a " + topicName;
+        String s = "Bienvenido a " + topicName + "\n";
         if(topicsAndSubs.containsKey(topicName)){
             topicsAndSubs.get(topicName).add(clientOutputStream);
         } else {
-            s = "El tema no existe.";
+            s = "El tema no existe.\n";
         }
         return s;
     }
@@ -155,7 +156,6 @@ public class ChatServer implements Runnable{
             try{
                 ServerThread st = new ServerThread(server.accept(), this);
                 st.start();
-//                msg = (String) is.readObject();
                 String[] splitMsg = msg.split(">");
                 switch(splitMsg[0]){
                     case "LGN":
@@ -165,60 +165,10 @@ public class ChatServer implements Runnable{
                         System.out.println(splitMsg[0]);
                         break;
                 }
-//                showMessage("\n" + msg);
             }
             catch(IOException e){
                 e.printStackTrace();
             }
-//            catch(ClassNotFoundException e){
-//                e.printStackTrace();
-//            }
         }
-//        while(true){
-//            try{
-//                Socket client = server.accept();
-//            } 
-//            catch (Exception e){
-//                e.printStackTrace();
-//            }
-//        }
     }
-
-//    private void initStreams(){
-//        System.out.println("Inicializando streams...");
-//        try {
-//            os = new ObjectOutputStream(con.getOutputStream());
-//            os.flush();
-//            is = new ObjectInputStream(con.getInputStream());
-//            System.out.println("Streams OK.");
-//        } catch (IOException ex) {
-//            System.out.println("Error al inicializar streams.");
-//            Logger.getLogger(ChatServer.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        
-//    }
-    
-//    private void close(){
-//        System.out.println("Cerrando...");
-//        try{
-//            os.close();
-//            is.close();
-//            con.close();
-//            System.out.println("Conexión cerrada.");
-//        }
-//        catch(Exception e){
-//            e.printStackTrace();
-//        }
-//    }
-    
-//    public void sendMessage(String msg){
-//        try{
-//            os.writeObject("SERVER - " + msg);
-//            os.flush();
-//            System.out.println("\nSERVER - " + msg);
-//        }
-//        catch(Exception e){
-//            chatWindow.append("\n Error while sending");
-//        }
-//    }
 }
