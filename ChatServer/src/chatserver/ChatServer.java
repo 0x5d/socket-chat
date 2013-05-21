@@ -30,10 +30,8 @@ public class ChatServer implements Runnable{
     private ObjectOutputStream os;
     private ObjectInputStream is;
     private ServerSocket server;
-    private Socket con;
-    private int nextPort;
-    private static HashMap<String, ArrayList<ObjectOutputStream>> topicsAndSubs;
-    private static ArrayList<String> users;
+    private HashMap<String, ArrayList<ObjectOutputStream>> topicsAndSubs;
+    private ArrayList<String> users;
     
     /**
      * @param args the command line arguments
@@ -77,8 +75,13 @@ public class ChatServer implements Runnable{
         }
     }
 
-    public ArrayList<ObjectOutputStream> getTopicOutputStreams(String roomName){
-        return topicsAndSubs.get(roomName);
+    public ArrayList<ObjectOutputStream> getTopicOutputStreams(String topicName){
+        for(ObjectOutputStream o : topicsAndSubs.get(topicName)){
+            if(o == null){
+                topicsAndSubs.get(topicName).remove(o);
+            }
+        }
+        return topicsAndSubs.get(topicName);
     }
     
     public Object[] getTopics(){
@@ -117,11 +120,12 @@ public class ChatServer implements Runnable{
     }
     
     public void createTopic(String topic){
-        if(!topicsAndSubs.containsKey(topic)){
-            topicsAndSubs.put(topic, new ArrayList<ObjectOutputStream>());
-        } else {
-            topicsAndSubs.put(topic + 1, new ArrayList<ObjectOutputStream>());
-        }
+//        if(!topicsAndSubs.containsKey(topic)){
+        topicsAndSubs.put(topic, new ArrayList<ObjectOutputStream>());
+//        } 
+//        else {
+//            topicsAndSubs.put(topic + 1, new ArrayList<ObjectOutputStream>());
+//        }
     }
     
     public String subscribeToTopic(String topicName, ObjectOutputStream clientOutputStream){
@@ -149,7 +153,6 @@ public class ChatServer implements Runnable{
     
     @Override
     public void run() {
-        String msg = "";
         while(true){
             try{
                 ServerThread st = new ServerThread(server.accept(), this);
@@ -159,5 +162,9 @@ public class ChatServer implements Runnable{
                 e.printStackTrace();
             }
         }
+    }
+    
+    public void remove(String user){
+        users.remove(user);
     }
 }

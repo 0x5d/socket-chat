@@ -26,11 +26,11 @@ public class ServerThread extends Thread{
     
     public ServerThread(Socket con, ChatServer server){
         this.server = server;
-        currentTopic = "antesala";
-        server.createTopic(currentTopic);
+        currentTopic = "";
+//        server.createTopic(currentTopic);
         this.con = con;
         initStreams();
-        server.subscribeToTopic(currentTopic, os);
+//        server.subscribeToTopic(currentTopic, os);
         sendMessage("JOIN>Bienvenid@ a la antesala\nUsted puede:\nVer los usuarios conectados: list_users\nVer los temas activos: list_topics\n"
                 + "Crear un nuevo tema: create_'nombre del tema'\nUnirse a un tema: join_'nombre del tema'\nSalir: quit\n");
     }
@@ -102,9 +102,14 @@ public class ServerThread extends Thread{
                         }
                         break;
                     case "MESS":
-                        ArrayList<ObjectOutputStream> subs = server.getTopicOutputStreams(currentTopic);
-                        sendMessageToMany("MESS>" + splitMsg[1] + ">" + splitMsg[2], subs);
+                        if(!currentTopic.equals("")){
+                            ArrayList<ObjectOutputStream> subs = server.getTopicOutputStreams(currentTopic);
+                            sendMessageToMany("MESS>" + splitMsg[1] + ">" + splitMsg[2], subs);
+                        }
                         break;
+                    case "QUIT":
+                        server.unsubscribeToTopic(currentTopic, os);
+                        server.remove(splitMsg[1]);
                     default:
                         break;
                 } 
@@ -130,7 +135,7 @@ public class ServerThread extends Thread{
             s += topic + " con " + server.getUsersOnTopic(topic) + " usuarios.\n";
         }
         if(s.equals("Temas:\n")){
-            s += "No se ha creado ningun tema. Para crear uno, escriba 'create_'nombre del tema'";
+            s += "No se ha creado ningun tema. Para crear uno, escriba 'create_'nombre del tema'\n";
         }
         return s;
     }
@@ -141,17 +146,20 @@ public class ServerThread extends Thread{
             os.writeObject(message);
         }
         catch(Exception e){
-            System.out.println("\n error al enviar");
+            System.out.println("\n Error al enviar");
         }
     }
     
     private void sendMessageToMany(String message, ArrayList<ObjectOutputStream> subs){
         for(ObjectOutputStream o : subs){
             try {
-                o.writeObject(message);
+                if(!(o == null)){
+                    o.writeObject(message);
+                }
             } catch (IOException ex) {
                 Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
-                System.exit(0);
+                server.unsubscribeToTopic(currentTopic, o);
+//                System.exit(0);
             }
         }
     }

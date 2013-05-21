@@ -7,12 +7,13 @@ package chatclient;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,7 +22,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 
 /**
  *
@@ -29,7 +29,7 @@ import javax.swing.SwingUtilities;
  */
 public class ChatClient extends JFrame implements ActionListener{
     
-    private  int port;
+    private int port;
     private String ip;
     private String name;
     private JTextField usrText;
@@ -37,8 +37,7 @@ public class ChatClient extends JFrame implements ActionListener{
     private ObjectOutputStream os;
     private ObjectInputStream is;
     private Socket con;
-    private boolean lobby;
-    private boolean writing;
+    private boolean active;
     
     public static void main(String[] args) {
         int clientPort;
@@ -79,8 +78,7 @@ public class ChatClient extends JFrame implements ActionListener{
         ip = serverIP;
         port = clientPort;
         name = clientName;
-        lobby = false;
-        writing = false;
+        active = true;
         usrText = new JTextField();
         usrText.setEditable(false);
         usrText.addActionListener(this);
@@ -90,7 +88,12 @@ public class ChatClient extends JFrame implements ActionListener{
         add(new JScrollPane(chatWindow), BorderLayout.CENTER);
         setSize(300, 150);
         setVisible(true);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+//        setDefaultCloseOperation(close());
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent evt) {
+                close();
+            }
+        });
     }
 
     @Override
@@ -105,8 +108,7 @@ public class ChatClient extends JFrame implements ActionListener{
                     sendMessage("LSTT>" + name);
                     break;
                 case "quit":
-                    this.dispose();
-                    System.exit(1);
+                    close();
                 default:
                     if(msg.length() > 7 && msg.substring(0, 7).equals("create_")){
                         sendMessage("CREA>" + name + ">" + msg.substring(7));
@@ -149,7 +151,6 @@ public class ChatClient extends JFrame implements ActionListener{
         }
         finally{
             close();
-            System.exit(0);
         }
     }
 
@@ -157,13 +158,17 @@ public class ChatClient extends JFrame implements ActionListener{
         showMessage("\n Cerrando...");
         ableToType(false);
         try{
+            active = false;
+            sendMessage("QUIT>" + name);
+            this.dispose();
+            con.close();
             os.close();
             is.close();
-            con.close();
+            System.exit(1);
         }
         catch(Exception e){
+            close();
             e.printStackTrace();
-            System.exit(0);
         }
     }
 
@@ -176,7 +181,7 @@ public class ChatClient extends JFrame implements ActionListener{
     private void runClient() throws IOException{
         ableToType(true);
         String msg = "";
-        while(true){
+        while(active){
             try{
                 msg = (String) is.readObject();
                 String[] splitMsg = msg.split(">+");
@@ -207,6 +212,9 @@ public class ChatClient extends JFrame implements ActionListener{
             catch(ClassNotFoundException e){
                 showMessage("Hubo un error al recibir mensajes.\n");
                 e.printStackTrace();
+            }
+            catch(IOException e){
+                System.exit(0);
             }
         }
     }
