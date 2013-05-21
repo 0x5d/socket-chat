@@ -113,7 +113,6 @@ public class ChatServer implements Runnable{
         for(String u : users){
             s += (u + "\n");
         }
-        System.out.println(s);
         return s;
     }
     
@@ -136,7 +135,6 @@ public class ChatServer implements Runnable{
     }
     
     public void unsubscribeToTopic(String topicName, ObjectOutputStream clientOuputStream){
-        System.out.println("Se dessubscribira a " + topicName);
         if(topicsAndSubs.containsKey(topicName)){
             topicsAndSubs.get(topicName).remove(clientOuputStream);
             if(topicsAndSubs.get(topicName).isEmpty()){
@@ -156,15 +154,6 @@ public class ChatServer implements Runnable{
             try{
                 ServerThread st = new ServerThread(server.accept(), this);
                 st.start();
-                String[] splitMsg = msg.split(">");
-                switch(splitMsg[0]){
-                    case "LGN":
-                        st.start();
-                        break;
-                    default:
-                        System.out.println(splitMsg[0]);
-                        break;
-                }
             }
             catch(IOException e){
                 e.printStackTrace();
